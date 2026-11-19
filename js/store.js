@@ -235,7 +235,12 @@ export class LiveStore {
   constructor() { this.demo = false; this.urls = new Map(); }
   async init() {
     const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm");
-    this.sb = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+    // lock: Supabase serialises session access with navigator.locks. In some browsers (seen in headless Chrome on
+    // github.io) that API never answers, which leaves sign-in stuck on "Loading…". A pass-through lock avoids it;
+    // the only cost is that two open tabs could both refresh the session at once, which is harmless.
+    this.sb = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, lock: async (_name, _timeout, fn) => await fn() },
+    });
     return this;
   }
   q(p) { return p.then(({ data, error }) => { if (error) throw new Error(error.message); return data; }); }
