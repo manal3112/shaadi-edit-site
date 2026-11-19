@@ -51,11 +51,20 @@ export async function route() {
   try {
     if (r === "b" && a) return await renderPublicBrief(app(), a);
     if (r === "sample") { setDemo(true); const ds = S.store; if (!ds.hasSample()) await ds.seedSample(); const w = (await ds.listWeddings()).find(x => x.sample); return go(`#/w/${w.id}`); }
+    // Arriving from the sign-in email: Supabase reads the tokens from the address; tidy it up and carry on.
+    if (/access_token=|error_description=/.test(location.hash)) {
+      const err = new URLSearchParams(location.hash.slice(1)).get("error_description");
+      if (err) toast(err.replace(/\+/g, " ") + ". Ask for a new sign-in email.", "err");
+      await S.store.me();
+      history.replaceState(null, "", location.pathname + "#/app");
+      return route();
+    }
     if (!r) return renderLanding();
     S.me = await S.store.me();
-    if (!S.me) { if (r === "join" && a) sessionStorage.setItem("se-join", a); return renderSignIn(); }
+    // The sign-in link may open in a new tab, so a pending invite is kept in localStorage, not sessionStorage.
+    if (!S.me) { if (r === "join" && a) lsSet("se-join", a); return renderSignIn(); }
     if (r === "join" && a) return await acceptInvite(a);
-    if (sessionStorage.getItem("se-join")) { const t = sessionStorage.getItem("se-join"); sessionStorage.removeItem("se-join"); return await acceptInvite(t); }
+    if (lsGet("se-join")) { const t = lsGet("se-join"); lsSet("se-join", null); return await acceptInvite(t); }
     if (r === "new") return renderNew();
     if (r === "w" && a) return await renderWedding(a, b || "board");
     return await renderHome();
@@ -174,7 +183,7 @@ function renderSignIn() {
     };
     code.addEventListener("input", () => { code.value = code.value.replace(/\D/g, "").slice(0, 6); if (code.value.length === 6) verify(); });
     box.replaceChildren(el("h1", { class: "serif" }, "Check your email"),
-      el("p", { class: "muted" }, `We sent a code to ${email}. It can take a minute, and may land in spam.`),
+      el("p", { class: "muted" }, `We emailed ${email}. Tap the sign-in link in that email, or type the 6-digit code if the email shows one. It can take a minute, and may land in spam.`),
       el("form", { class: "stack", onsubmit: e => { e.preventDefault(); verify(); } }, code, el("button", { class: "btn primary big", type: "submit" }, "Continue")), msg,
       el("button", { class: "link-btn", onclick: step1 }, "Use a different email"));
   };
