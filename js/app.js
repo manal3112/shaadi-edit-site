@@ -148,7 +148,7 @@ function renderLanding() {
 
       el("section", { class: "faq", id: "faq" }, el("h2", { class: "serif" }, "Questions"),
         ...[["Is it free?", "Yes, while we're in early access. Later there'll be an optional premium upgrade per wedding. Never ads."],
-            ["Does my family need to install anything?", "No. Send them an invite link on WhatsApp. It opens in the browser, and they sign in with a code sent to their email."],
+            ["Does my family need to install anything?", "No. Send them an invite link on WhatsApp. It opens in the browser, and they sign in with a link sent to their email. No password."],
             ["Can I save straight from Instagram?", "On Android, add the app to your home screen and it appears in Instagram's Share menu. On iPhone, copy the link and paste it into the app: it's ready the moment you open it."],
             ["Who can see our wedding?", "Only the people you invite. You choose who can edit and who can only comment. Vendors see only the ideas in the brief you send them."],
             ["How is this different from Pinterest or Canva?", "Pinterest is for discovering ideas and Canva is for designing. Shaadi Edit is for deciding: functions, shortlists, family votes, finals and vendor briefs, all in one place."]]
@@ -165,14 +165,14 @@ function renderSignIn() {
   const box = el("div", { class: "auth-card" });
   const step1 = () => box.replaceChildren(...[
     el("h1", { class: "serif" }, "Welcome"),
-    el("p", { class: "muted" }, "Enter your email. We'll send you a 6-digit code. No password needed."),
+    el("p", { class: "muted" }, "Enter your email and we'll send you a sign-in link. No password needed."),
     el("form", { class: "stack", onsubmit: async e => {
       e.preventDefault(); email = e.target.email.value.trim().toLowerCase();
       const b = e.target.querySelector("button"); b.disabled = true; b.textContent = "Sending…"; msg.textContent = "";
-      try { await S.store.signIn(email); step2(); } catch (err) { msg.textContent = err.message; b.disabled = false; b.textContent = "Send code"; }
+      try { await S.store.signIn(email); step2(); } catch (err) { msg.textContent = err.message; b.disabled = false; b.textContent = "Email me a sign-in link"; }
     } },
       el("input", { name: "email", type: "email", required: true, autocomplete: "email", placeholder: "you@example.com", autofocus: true, "aria-label": "Email" }),
-      el("button", { class: "btn primary big", type: "submit" }, "Send code")), msg,
+      el("button", { class: "btn primary big", type: "submit" }, "Email me a sign-in link")), msg,
     S.live ? el("p", { class: "fine" }, "Just looking? ", el("a", { href: "#/sample" }, "Open the sample wedding"), " without signing in.") : null].filter(Boolean));
   const step2 = () => {
     const code = el("input", { name: "code", inputmode: "numeric", autocomplete: "one-time-code", maxlength: "6", pattern: "[0-9]{6}", placeholder: "123456", class: "code", autofocus: true, "aria-label": "6-digit code" });
